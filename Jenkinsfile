@@ -131,7 +131,6 @@ pipeline {
                 bat """
                 @echo off
                 git tag v1.0 >nul 2>&1
-                git push origin v1.0 >nul 2>&1
                 exit /b 0
                 """
             }
