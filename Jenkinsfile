@@ -9,6 +9,7 @@ pipeline {
         IMAGE_NAME = "devops-app"
         DOCKER_REPO = "riyaverma5456/devops-app"
         SONAR_HOST_URL = "http://localhost:9000"
+        TRIVY_PATH = "C:\\Users\\riyav\\AppData\\Local\\Microsoft\\WinGet\\Links\\trivy.exe"
     }
 
     stages {
@@ -37,11 +38,13 @@ pipeline {
                     def scannerHome = tool 'sonar-scanner'
                     withSonarQubeEnv('sonarqube') {
                         bat """
-                        ${scannerHome}\\bin\\sonar-scanner.bat ^
+                        @echo off
+                        "${scannerHome}\\bin\\sonar-scanner.bat" ^
                         -Dsonar.projectKey=devops-app ^
                         -Dsonar.sources=. ^
                         -Dsonar.host.url=%SONAR_HOST_URL% ^
                         -Dsonar.token=%SONAR_AUTH_TOKEN%
+                        if errorlevel 1 exit /b 1
                         """
                     }
                 }
@@ -50,13 +53,21 @@ pipeline {
 
         stage('Security Scan') {
             steps {
-                bat '"C:\\Users\\riyav\\AppData\\Local\\Microsoft\\WinGet\\Links\\trivy.exe" fs --severity HIGH,CRITICAL --exit-code 1 .'
+                bat """
+                @echo off
+                "%TRIVY_PATH%" fs --severity HIGH,CRITICAL --exit-code 1 .
+                if errorlevel 1 exit /b 1
+                """
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                bat 'docker build -t %IMAGE_NAME% .'
+                bat """
+                @echo off
+                docker build -t %IMAGE_NAME% .
+                if errorlevel 1 exit /b 1
+                """
             }
         }
 
@@ -68,11 +79,23 @@ pipeline {
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
                     bat """
+                    @echo off
                     echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
+                    if errorlevel 1 exit /b 1
+
                     docker tag %IMAGE_NAME% %DOCKER_REPO%:latest
+                    if errorlevel 1 exit /b 1
+
                     docker tag %IMAGE_NAME% %DOCKER_REPO%:v1.0
+                    if errorlevel 1 exit /b 1
+
                     docker push %DOCKER_REPO%:latest
+                    if errorlevel 1 exit /b 1
+
                     docker push %DOCKER_REPO%:v1.0
+                    if errorlevel 1 exit /b 1
+
+                    docker logout
                     """
                 }
             }
@@ -82,13 +105,18 @@ pipeline {
             steps {
                 script {
                     try {
-                        bat 'docker rm -f devops-app || exit /b 0'
-                        bat 'docker run -d --name devops-app -p 3000:3000 %IMAGE_NAME%'
+                        bat """
+                        @echo off
+                        docker rm -f devops-app >nul 2>&1
+                        docker run -d --name devops-app -p 3000:3000 %IMAGE_NAME%
+                        if errorlevel 1 exit /b 1
+                        """
                     } catch (err) {
                         echo "Deployment failed! Rolling back..."
                         bat """
-                        docker rm -f devops-app || exit /b 0
-                        docker run -d --name devops-app -p 3000:3000 riyaverma5456/devops-app:v1.0
+                        @echo off
+                        docker rm -f devops-app >nul 2>&1
+                        docker run -d --name devops-app -p 3000:3000 %DOCKER_REPO%:v1.0
                         """
                         error("Deployment failed, rollback executed")
                     }
@@ -98,15 +126,23 @@ pipeline {
 
         stage('Release') {
             steps {
-                bat 'git tag v1.0 || exit /b 0'
-                bat 'git push origin v1.0 || exit /b 0'
+                bat """
+                @echo off
+                git tag v1.0 >nul 2>&1
+                git push origin v1.0 >nul 2>&1
+                exit /b 0
+                """
             }
         }
 
         stage('Monitoring') {
             steps {
-                bat 'docker ps'
-                bat 'docker logs devops-app || exit /b 0'
+                bat """
+                @echo off
+                docker ps
+                docker logs devops-app
+                exit /b 0
+                """
             }
         }
     }
@@ -138,7 +174,12 @@ Stages executed:
                 subject: "FAILED: ${env.JOB_NAME}",
                 body: """Pipeline failed.
 
-Please check the Jenkins console output for the exact error details.
+Check:
+- SonarQube is running on localhost:9000
+- Jenkins credential ID 'docker-creds' exists
+- docker-creds uses username: riyaverma5456
+- docker-creds password is a valid Docker Hub access token
+- Trivy exists at: %TRIVY_PATH%
 """,
                 to: "riyaverma5383@gmail.com"
             )
