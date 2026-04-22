@@ -1,0 +1,47 @@
+# Prometheus Alerting Rules for Smart Home API
+# These rules trigger alerts when the application has issues.
+# Alerts can be routed to Datadog, New Relic, PagerDuty, or email via Alertmanager.
+
+groups:
+  - name: smart_home_api_alerts
+    rules:
+
+      # Alert when the app is completely unreachable
+      - alert: AppDown
+        expr: up{job="smart-home-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Smart Home API is DOWN"
+          description: "The smart-home-api target has been unreachable for more than 1 minute."
+
+      # Alert when error rate is high (more than 10 errors)
+      - alert: HighErrorRate
+        expr: app_errors_total > 10
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate detected"
+          description: "The application has recorded {{ $value }} server errors."
+
+      # Alert when heap memory exceeds 400MB
+      - alert: HighMemoryUsage
+        expr: process_heap_bytes > 400000000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage"
+          description: "Node.js heap is using {{ $value | humanize }} bytes."
+
+      # Alert when total requests spike suddenly (> 1000 total)
+      - alert: HighRequestVolume
+        expr: http_requests_total > 1000
+        for: 1m
+        labels:
+          severity: info
+        annotations:
+          summary: "High request volume"
+          description: "Application has served {{ $value }} total requests."

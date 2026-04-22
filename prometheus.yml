@@ -1,0 +1,39 @@
+# Prometheus Configuration for Smart Home API Monitoring
+# This file tells Prometheus where to scrape metrics from.
+# Usage: docker-compose up (see docker-compose.yml)
+
+global:
+  scrape_interval: 15s       # Scrape every 15 seconds
+  evaluation_interval: 15s   # Evaluate alerting rules every 15 seconds
+
+# ── Alerting Rules ─────────────────────────────────────────────────────────────
+# These trigger when something goes wrong in production
+rule_files:
+  - "alert_rules.yml"
+
+# ── Scrape Targets ─────────────────────────────────────────────────────────────
+scrape_configs:
+
+  # Prometheus scrapes itself (for meta-monitoring)
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Scrape our Smart Home API /metrics endpoint
+  - job_name: 'smart-home-api'
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['devops-app:3000']   # Container name from docker-compose
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        regex: '(.*):.*'
+        replacement: '$1'
+
+  # Health check probe (via blackbox-style HTTP check)
+  - job_name: 'smart-home-health'
+    metrics_path: '/health'
+    scrape_interval: 30s
+    static_configs:
+      - targets: ['devops-app:3000']
