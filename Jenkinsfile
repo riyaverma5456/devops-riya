@@ -50,7 +50,7 @@ pipeline {
 
         stage('Security Scan') {
             steps {
-                bat 'trivy fs --severity HIGH,CRITICAL --exit-code 1 .'
+                bat '"C:\\Users\\riyav\\AppData\\Local\\Microsoft\\WinGet\\Links\\trivy.exe" fs --severity HIGH,CRITICAL --exit-code 1 .'
             }
         }
 
