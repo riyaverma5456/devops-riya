@@ -25,35 +25,28 @@ pipeline {
             }
         }
 
-        stage('Test & Code Quality') {
-            parallel {
+        stage('Test') {
+            steps {
+                bat 'npm test'
+            }
+        }
 
-                stage('Test') {
-                    steps {
-                        bat 'npm test'
-                    }
-                }
-
-                stage('SonarQube Scan') {
-                    steps {
-                        script {
-                            def scannerHome = tool 'sonar-scanner'
-                            withSonarQubeEnv('sonarqube') {
-                                bat """
-                                ${scannerHome}\\bin\\sonar-scanner.bat ^
-                                -Dsonar.projectKey=devops-app ^
-                                -Dsonar.sources=. ^
-                                -Dsonar.host.url=%SONAR_HOST_URL% ^
-                                -Dsonar.login=%SONAR_AUTH_TOKEN%
-                                """
-                            }
-                        }
+        stage('SonarQube Scan') {
+            steps {
+                script {
+                    def scannerHome = tool 'sonar-scanner'
+                    withSonarQubeEnv('sonarqube') {
+                        bat """
+                        ${scannerHome}\\bin\\sonar-scanner.bat ^
+                        -Dsonar.projectKey=devops-app ^
+                        -Dsonar.sources=. ^
+                        -Dsonar.host.url=%SONAR_HOST_URL% ^
+                        -Dsonar.token=%SONAR_AUTH_TOKEN%
+                        """
                     }
                 }
             }
         }
-
-        // ❌ REMOVED QUALITY GATE (no webhook needed)
 
         stage('Security Scan') {
             steps {
@@ -93,12 +86,10 @@ pipeline {
                         bat 'docker run -d --name devops-app -p 3000:3000 %IMAGE_NAME%'
                     } catch (err) {
                         echo "Deployment failed! Rolling back..."
-
                         bat """
                         docker rm -f devops-app || exit /b 0
                         docker run -d --name devops-app -p 3000:3000 riyaverma/devops-app:v1.0
                         """
-
                         error("Deployment failed, rollback executed")
                     }
                 }
@@ -124,7 +115,20 @@ pipeline {
         success {
             emailext(
                 subject: "SUCCESS: ${env.JOB_NAME}",
-                body: "Pipeline completed successfully 🚀",
+                body: """Pipeline completed successfully.
+
+Stages executed:
+- Checkout
+- Install Dependencies
+- Test
+- SonarQube Scan
+- Security Scan
+- Build Docker Image
+- Push to Docker Hub
+- Deploy
+- Release
+- Monitoring
+""",
                 to: "riyaverma5383@gmail.com"
             )
         }
@@ -132,7 +136,13 @@ pipeline {
         failure {
             emailext(
                 subject: "FAILED: ${env.JOB_NAME}",
-                body: "Pipeline failed ❌ Check Jenkins logs",
+                body: """Pipeline failed.
+
+Most likely cause:
+- Automated tests failed, so the remaining stages were skipped.
+
+Please check the Jenkins console output for the exact error details.
+""",
                 to: "riyaverma5383@gmail.com"
             )
         }
