@@ -7,7 +7,7 @@ pipeline {
 
     environment {
         IMAGE_NAME = "devops-app"
-        DOCKER_REPO = "riyaverma5456/devops-app"
+        DOCKER_REPO = "riyaverma5456/devops-pipeline"
         SONAR_HOST_URL = "http://localhost:9000"
         TRIVY_PATH = "C:\\Users\\riyav\\AppData\\Local\\Microsoft\\WinGet\\Links\\trivy.exe"
     }
