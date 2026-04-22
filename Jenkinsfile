@@ -39,7 +39,7 @@ pipeline {
                     withSonarQubeEnv('sonarqube') {
                         bat """
                         @echo off
-                        "${scannerHome}\\bin\\sonar-scanner.bat" ^
+                        call "${scannerHome}\\bin\\sonar-scanner.bat" ^
                         -Dsonar.projectKey=devops-app ^
                         -Dsonar.sources=. ^
                         -Dsonar.host.url=%SONAR_HOST_URL% ^
@@ -80,7 +80,9 @@ pipeline {
                 )]) {
                     bat """
                     @echo off
-                    echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
+                    docker logout >nul 2>&1
+
+                    echo %DOCKER_PASS%| docker login -u %DOCKER_USER% --password-stdin
                     if errorlevel 1 exit /b 1
 
                     docker tag %IMAGE_NAME% %DOCKER_REPO%:latest
@@ -95,7 +97,7 @@ pipeline {
                     docker push %DOCKER_REPO%:v1.0
                     if errorlevel 1 exit /b 1
 
-                    docker logout
+                    docker logout >nul 2>&1
                     """
                 }
             }
@@ -140,7 +142,7 @@ pipeline {
                 bat """
                 @echo off
                 docker ps
-                docker logs devops-app
+                docker logs devops-app >nul 2>&1
                 exit /b 0
                 """
             }
@@ -177,8 +179,8 @@ Stages executed:
 Check:
 - SonarQube is running on localhost:9000
 - Jenkins credential ID 'docker-creds' exists
-- docker-creds uses username: riyaverma5456
-- docker-creds password is a valid Docker Hub access token
+- docker-creds username is riyaverma5456
+- docker-creds password/token is correct
 - Trivy exists at: %TRIVY_PATH%
 """,
                 to: "riyaverma5383@gmail.com"
