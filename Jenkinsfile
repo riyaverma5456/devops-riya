@@ -7,7 +7,7 @@ pipeline {
 
     environment {
         IMAGE_NAME = "devops-app"
-        DOCKER_REPO = "riyaverma/devops-app"
+        DOCKER_REPO = "riyaverma5456/devops-app"
         SONAR_HOST_URL = "http://localhost:9000"
     }
 
@@ -88,7 +88,7 @@ pipeline {
                         echo "Deployment failed! Rolling back..."
                         bat """
                         docker rm -f devops-app || exit /b 0
-                        docker run -d --name devops-app -p 3000:3000 riyaverma/devops-app:v1.0
+                        docker run -d --name devops-app -p 3000:3000 riyaverma5456/devops-app:v1.0
                         """
                         error("Deployment failed, rollback executed")
                     }
@@ -137,9 +137,6 @@ Stages executed:
             emailext(
                 subject: "FAILED: ${env.JOB_NAME}",
                 body: """Pipeline failed.
-
-Most likely cause:
-- Automated tests failed, so the remaining stages were skipped.
 
 Please check the Jenkins console output for the exact error details.
 """,
