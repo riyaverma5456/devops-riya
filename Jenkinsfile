@@ -3,7 +3,7 @@ pipeline {
 
     tools {
         nodejs 'node18'
-    }
+        }
 
     environment {
         IMAGE_NAME = "devops-app"
