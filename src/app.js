@@ -3,6 +3,7 @@ const path = require('node:path');
 const morgan = require('morgan');
 const { v4: uuidv4 } = require('uuid');
 const userRoutes = require('./routes/userRoutes');
+require('./issues');
 
 const app = express();
 
