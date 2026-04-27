@@ -102,28 +102,33 @@ pipeline {
             }
         }
 
-        stage('Deploy') {
-            steps {
-                script {
-                    try {
-                        bat """
-                        @echo off
-                        docker rm -f devops-app >nul 2>&1
-                        docker run -d --name devops-app -p 3000:3000 %IMAGE_NAME%
-                        if errorlevel 1 exit /b 1
-                        """
-                    } catch (err) {
-                        echo "Deployment failed! Rolling back..."
-                        bat """
-                        @echo off
-                        docker rm -f devops-app >nul 2>&1
-                        docker run -d --name devops-app -p 3000:3000 %DOCKER_REPO%:v1.0
-                        """
-                        error("Deployment failed, rollback executed")
-                    }
-                }
+stage('Deploy') {
+    steps {
+        script {
+            try {
+                bat """
+                @echo off
+
+                echo Stopping any container using port 3000...
+                for /f "tokens=5" %%a in ('netstat -aon ^| findstr :3000') do taskkill /PID %%a /F >nul 2>&1
+
+                docker rm -f devops-app >nul 2>&1
+
+                docker run -d --name devops-app -p 3000:3000 %IMAGE_NAME%
+                if errorlevel 1 exit /b 1
+                """
+            } catch (err) {
+                echo "Deployment failed! Rolling back..."
+                bat """
+                @echo off
+                docker rm -f devops-app >nul 2>&1
+                docker run -d --name devops-app -p 3000:3000 %DOCKER_REPO%:v1.0
+                """
+                error("Deployment failed, rollback executed")
             }
         }
+    }
+}
 
         stage('Release') {
             steps {
