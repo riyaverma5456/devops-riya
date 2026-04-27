@@ -11,6 +11,18 @@ app.use(express.json());
 app.use(morgan('dev')); // Logging requests
 app.use(express.static(path.join(__dirname, '../public'))); // Serve frontend
 
+// --- Code Smells & Issues for SonarQube ---
+var secretKey = "hardcoded_key_12345"; // Security Hotspot: Hardcoded secret
+var unusedVar = 42; // Code Smell: Unused variable
+
+function checkSecurity(input) {
+    try {
+        eval(input); // Security Vulnerability: Use of eval()
+    } catch (e) {
+        // Bug: Empty catch block
+    }
+}
+
 // --- User API Routes ---
 app.use('/api/users', userRoutes);
 
